@@ -689,6 +689,7 @@ document.getElementById('bulk-copy-button').onclick = () => {
 };
 </script>
 
+<script>
 // Improved file type handling (including MPEG-4 audios)
 function isAudioFile(file) {
     const audioExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
@@ -721,5 +722,5 @@ fileInput.addEventListener('change', (e) => {
         }
         fileInput.value = ''; // Reset input
     }
-});
+});</script>
 
