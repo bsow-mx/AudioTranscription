@@ -245,8 +245,8 @@
       <div class="upload-message">Drag & drop Audio-/Video-Dateien hierher</div>
       <div class="upload-message">oder</div>
       <button id="select-button" class="select-button">Dateien auswählen</button>
-      <!-- Akzeptiere neben Audio auch MP4 Dateien -->
-      <input type="file" id="file-input" class="file-input" accept="audio/*,video/mp4" multiple>
+      <!-- Akzeptiere sowohl Audio als auch Video, damit auch Apple MPEG-4 Audio erkannt wird -->
+      <input type="file" id="file-input" class="file-input" accept="audio/*,video/*" multiple>
     </div>
     
     <div id="file-list" class="file-list"></div>
@@ -263,7 +263,7 @@
     <div id="results-container" class="results-container"></div>
   </div>
 
-  <!-- Instagram-Blöcke -->
+  <!-- Instagram-Block -->
   <div style="
       margin: 3rem auto;
       padding: 20px;
@@ -291,7 +291,7 @@
   </button>
 
   <script>
-    // API key (vorgegeben)
+    // API-Key (vorgegeben)
     const API_KEY = 'b9b496027b404fe8ad26320eddd30eaa';
 
     // DOM-Elemente
@@ -306,16 +306,24 @@
     const resultsContainer = document.getElementById('results-container');
     const bulkCopyButton = document.getElementById('bulk-copy-button');
 
-    // State
+    // Zustand
     let files = [];
     let isProcessing = false;
     const fileStatuses = new Map();
 
-    // Funktion zur Überprüfung, ob es sich um eine gültige Audio-/Video-Datei handelt
+    // Funktion zur Prüfung, ob es sich um eine gültige Audio-/Video-Datei handelt
     function isAudioFile(file) {
-      const audioExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
+      const allowedExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
       const extension = file.name.split('.').pop().toLowerCase();
-      return file.type.startsWith('audio/') || audioExtensions.includes(extension);
+      
+      // Erlauben, wenn der MIME-Type Audio ist
+      if (file.type.startsWith('audio/')) return true;
+      
+      // Falls Video, aber Endung passt (z. B. m4a oder mp4)
+      if (file.type.startsWith('video/') && allowedExtensions.includes(extension)) return true;
+      
+      // Fallback: Überprüfung anhand der Dateiendung
+      return allowedExtensions.includes(extension);
     }
 
     // Event Listener
@@ -329,7 +337,7 @@
         } else {
           alert('Bitte nur gültige Audio-Dateien auswählen (z.B. MP3, M4A, WAV, MP4).');
         }
-        fileInput.value = ''; // Reset
+        fileInput.value = '';
       }
     });
 
