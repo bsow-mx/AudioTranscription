@@ -690,37 +690,44 @@ document.getElementById('bulk-copy-button').onclick = () => {
 </script>
 
 <script>
-// Improved file type handling (including MPEG-4 audios)
-function isAudioFile(file) {
-    const audioExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
-    const extension = file.name.split('.').pop().toLowerCase();
-    return file.type.startsWith('audio/') || audioExtensions.includes(extension);
-}
+    // Existing DOM Element definitions
+    const uploadContainer = document.getElementById('upload-container');
+    const fileInput = document.getElementById('file-input');
+    // other existing code...
 
-// Enhanced drag-and-drop handler
-uploadContainer.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadContainer.classList.remove('active');
-
-    const audioFiles = Array.from(e.dataTransfer.files).filter(isAudioFile);
-
-    if (audioFiles.length > 0) {
-        addFiles(audioFiles);
-    } else {
-        alert('Bitte nur gültige Audio-Dateien hochladen (z.B. MP3, M4A, WAV, MP4).');
+    // Your newly pasted handlers:
+    function isAudioFile(file) {
+        const audioExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
+        const extension = file.name.split('.').pop().toLowerCase();
+        return file.type.startsWith('audio/') || audioExtensions.includes(extension);
     }
-});
 
-// Enhanced file-input handler
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-        const audioFiles = Array.from(e.target.files).filter(isAudioFile);
+    uploadContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadContainer.classList.remove('active');
+
+        const audioFiles = Array.from(e.dataTransfer.files).filter(isAudioFile);
+
         if (audioFiles.length > 0) {
             addFiles(audioFiles);
         } else {
-            alert('Bitte nur gültige Audio-Dateien auswählen (z.B. MP3, M4A, WAV, MP4).');
+            alert('Bitte nur gültige Audio-Dateien hochladen (z.B. MP3, M4A, WAV, MP4).');
         }
-        fileInput.value = ''; // Reset input
-    }
-});</script>
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            const audioFiles = Array.from(e.target.files).filter(isAudioFile);
+            if (audioFiles.length > 0) {
+                addFiles(audioFiles);
+            } else {
+                alert('Bitte nur gültige Audio-Dateien auswählen (z.B. MP3, M4A, WAV, MP4).');
+            }
+            fileInput.value = '';
+        }
+    });
+
+    // rest of your existing JS code...
+</script>
+
 
