@@ -245,8 +245,8 @@
       <div class="upload-message">Drag & drop Audio-/Video-Dateien hierher</div>
       <div class="upload-message">oder</div>
       <button id="select-button" class="select-button">Dateien auswählen</button>
-      <!-- Akzeptiere sowohl Audio als auch Video, damit auch Apple MPEG-4 Audio erkannt wird -->
-      <input type="file" id="file-input" class="file-input" accept="audio/*,video/*" multiple>
+      <!-- Wir erlauben hier explizit m4a-Dateien (sowie alle Audio-/Videoformate) -->
+      <input type="file" id="file-input" class="file-input" accept=".m4a,audio/*,video/*" multiple>
     </div>
     
     <div id="file-list" class="file-list"></div>
@@ -316,10 +316,13 @@
       const allowedExtensions = ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'];
       const extension = file.name.split('.').pop().toLowerCase();
       
-      // Erlauben, wenn der MIME-Type Audio ist
+      // Falls kein MIME-Type geliefert wird, erfolgt die Prüfung anhand der Dateiendung
+      if (!file.type) return allowedExtensions.includes(extension);
+      
+      // Erlaube, wenn der MIME-Type mit "audio/" beginnt (z.B. audio/mp4)
       if (file.type.startsWith('audio/')) return true;
       
-      // Falls Video, aber Endung passt (z. B. m4a oder mp4)
+      // Falls als Video deklariert, aber die Endung zu unseren erlaubten Formaten gehört
       if (file.type.startsWith('video/') && allowedExtensions.includes(extension)) return true;
       
       // Fallback: Überprüfung anhand der Dateiendung
