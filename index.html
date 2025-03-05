@@ -1,10 +1,1538 @@
-transcriptionParams.punctuate = true;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription Tool</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 2.2rem;
+        }
+        .author {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: #777;
+        }
+        .author a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .author a:hover {
+            text-decoration: underline;
+        }
+        .upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .upload-container:hover, .upload-container.active {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .upload-message {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .file-input {
+            display: none;
+        }
+        .select-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .select-button:hover {
+            background-color: var(--secondary);
+        }
+        .file-list {
+            margin-bottom: 1.5rem;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+        .file-icon {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-size {
+            color: #666;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        .remove-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .transcribe-button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .transcribe-button:hover {
+            background-color: var(--secondary);
+        }
+        .transcribe-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin: 1.5rem 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-status {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+        }
+        .results-container {
+            margin-top: 1.5rem;
+        }
+        .result-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .result-title {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .action-button:hover {
+            background-color: var(--secondary);
+        }
+        .action-button.chatgpt {
+            background-color: #10a37f;
+        }
+        .action-button.chatgpt:hover {
+            background-color: #0d8c6c;
+        }
+        .action-button.translate {
+            background-color: #4285f4;
+        }
+        .action-button.translate:hover {
+            background-color: #3367d6;
+        }
+        .action-button.summarize {
+            background-color: #fbbc05;
+            color: #333;
+        }
+        .action-button.summarize:hover {
+            background-color: #f9a825;
+        }
+        .result-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background-color: white;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        .error-message {
+            color: #f44336;
+            font-weight: 500;
+        }
+        .status-pill {
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+        .status-processing {
+            background-color: #ffe0b2;
+            color: #e65100;
+        }
+        .status-completed {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .status-error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-header {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .modal-body textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #777;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .result-actions {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Transcription Tool</h1>
+        <p class="author">Created by <a href="https://instagram.com/max.bsow" target="_blank">@max.bsow</a> | Powered by AssemblyAI</p>
+        
+        <div id="upload-container" class="upload-container">
+            <div class="upload-icon">🎙️</div>
+            <div class="upload-message">Drag & drop audio files here</div>
+            <div class="upload-message">or</div>
+            <button id="select-button" class="select-button">Select Files</button>
+            <input type="file" id="file-input" class="file-input" accept="audio/*" multiple>
+        </div>
+        
+        <div id="file-list" class="file-list"></div>
+        
+        <button id="transcribe-button" class="transcribe-button">Transcribe Files</button>
+        
+        <div id="progress-container" class="progress-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-status" class="progress-status">Initializing...</div>
+        </div>
+        
+        <div id="results-container" class="results-container"></div>
+        
+        <div class="footer">
+            Powered by AssemblyAI API • Made with ❤️ by @max.bsow
+        </div>
+    </div>
+    
+    <!-- ChatGPT Modal -->
+    <div id="chatgpt-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-chatgpt-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Send to ChatGPT</h3>
+                <p>Copy this text and paste it into ChatGPT</p>
+            </div>
+            <div class="modal-body">
+                <textarea id="chatgpt-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-to-clipboard">Copy to Clipboard</button>
+                <button class="action-button chatgpt" id="open-chatgpt">Open ChatGPT</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Translate Modal -->
+    <div id="translate-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-translate-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Translation</h3>
+                <p>Translate using Google Translate</p>
+            </div>
+            <div class="modal-body">
+                <div class="language-selector">
+                    <select id="translate-language">
+                        <option value="en">English</option>
+                        <option value="de">German</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="zh-CN">Chinese (Simplified)</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                    </select>
+                </div>
+                <textarea id="translate-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-translate">Copy</button>
+                <button class="action-button translate" id="open-translator">Open in Google Translate</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summarize Modal -->
+    <div id="summarize-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-summarize-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Text Summary</h3>
+                <p>Send to ChatGPT with a summarization prompt</p>
+            </div>
+            <div class="modal-body">
+                <textarea id="summarize-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-summary">Copy</button>
+                <button class="action-button chatgpt" id="summarize-with-chatgpt">Open in ChatGPT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your API key is pre-configured
+        const API_KEY = 'b9b496027b404fe8ad26320eddd30eaa';
+        
+        // DOM Elements
+        const uploadContainer = document.getElementById('upload-container');
+        const fileInput = document.getElementById('file-input');
+        const selectButton = document.getElementById('select-button');
+        const fileList = document.getElementById('file-list');
+        const transcribeButton = document.getElementById('transcribe-button');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-fill');
+        const progressStatus = document.getElementById('progress-status');
+        const resultsContainer = document.getElementById('results-container');
+        
+        // Modals
+        const chatgptModal = document.getElementById('chatgpt-modal');
+        const closeChatgptModal = document.getElementById('close-chatgpt-modal');
+        const chatgptText = document.getElementById('chatgpt-text');
+        const copyToClipboardBtn = document.getElementById('copy-to-clipboard');
+        const openChatgptBtn = document.getElementById('open-chatgpt');
+        
+        const translateModal = document.getElementById('translate-modal');
+        const closeTranslateModal = document.getElementById('close-translate-modal');
+        const translateText = document.getElementById('translate-text');
+        const translateLanguage = document.getElementById('translate-language');
+        const copyTranslateBtn = document.getElementById('copy-translate');
+        const openTranslatorBtn = document.getElementById('open-translator');
+        
+        const summarizeModal = document.getElementById('summarize-modal');
+        const closeSummarizeModal = document.getElementById('close-summarize-modal');
+        const summarizeText = document.getElementById('summarize-text');
+        const copySummaryBtn = document.getElementById('copy-summary');
+        const summarizeWithChatgptBtn = document.getElementById('summarize-with-chatgpt');
+        
+        // State
+        let files = [];
+        let isProcessing = false;
+        const fileStatuses = new Map();
+        let currentTranscript = '';
+        
+        // Event Listeners
+        selectButton.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                addFiles(Array.from(e.target.files));
+                fileInput.value = ''; // Reset input
+            }
+        });
+        
+        uploadContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadContainer.classList.add('active');
+        });
+        
+        uploadContainer.addEventListener('dragleave', () => {
+            uploadContainer.classList.remove('active');
+        });
+        
+        uploadContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadContainer.classList.remove('active');
+            
+            const audioFiles = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('audio/') || 
+                ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'].some(ext => 
+                    file.name.toLowerCase().endsWith('.' + ext)
+                )
+            );
+            
+            if (audioFiles.length > 0) {
+                addFiles(audioFiles);
+            } else {
+                alert('Please drop audio files only.');
+            }
+        });
+        
+        transcribeButton.addEventListener('click', startTranscription);
+        
+        // Modal close buttons
+        closeChatgptModal.addEventListener('click', () => chatgptModal.style.display = 'none');
+        closeTranslateModal.addEventListener('click', () => translateModal.style.display = 'none');
+        closeSummarizeModal.addEventListener('click', () => summarizeModal.style.display = 'none');
+        
+        // Copy buttons
+        copyToClipboardBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(chatgptText.value)
+                .then(() => {
+                    copyToClipboardBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyToClipboardBtn.textContent = 'Copy to Clipboard';
+                    }, 2000);
+                });
+        });
+        
+        copyTranslateBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(translateText.value)
+                .then(() => {
+                    copyTranslateBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyTranslateBtn.textContent = 'Copy';
+                    }, 2000);
+                });
+        });
+        
+        copySummaryBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(summarizeText.value)
+                .then(() => {
+                    copySummaryBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copySummaryBtn.textContent = 'Copy';
+                    }, 2000);
+                });
+        });
+        
+        // Open buttons
+        openChatgptBtn.addEventListener('click', () => {
+            window.open('https://chat.openai.com/', '_blank');
+        });
+        
+        openTranslatorBtn.addEventListener('click', () => {
+            const text = encodeURIComponent(translateText.value);
+            const lang = translateLanguage.value;
+            window.open(`https://translate.google.com/?sl=auto&tl=${lang}&text=${text}`, '_blank');
+        });
+        
+        summarizeWithChatgptBtn.addEventListener('click', () => {
+            window.open('https://chat.openai.com/', '_blank');
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === chatgptModal) chatgptModal.style.display = 'none';
+            if (e.target === translateModal) translateModal.style.display = 'none';
+            if (e.target === summarizeModal) summarizeModal.style.display = 'none';
+        });
+        
+        // Functions
+        function addFiles(newFiles) {
+            // Add only files that aren't already in the list
+            const filesToAdd = newFiles.filter(newFile => 
+                !files.some(file => file.name === newFile.name && file.size === newFile.size)
+            );
+            
+            files = [...files, ...filesToAdd];
+            renderFileList();
+            updateTranscribeButton();
+        }
+        
+        function renderFileList() {
+            fileList.innerHTML = '';
+            
+            if (files.length === 0) {
+                return;
+            }
+            
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const status = fileStatuses.get(file.name) || 'pending';
+                let statusHtml = '';
+                
+                if (status === 'processing') {
+                    statusHtml = '<span class="status-pill status-processing">Processing</span>';
+                } else if (status === 'completed') {
+                    statusHtml = '<span class="status-pill status-completed">Completed</span>';
+                } else if (status === 'error') {
+                    statusHtml = '<span class="status-pill status-error">Error</span>';
+                }
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">🔊</span>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                        ${statusHtml}
+                    </div>
+                    <button class="remove-button" data-index="${index}">Remove</button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (isProcessing) return;
+                    
+                    const index = parseInt(button.getAttribute('data-index'));
+                    files.splice(index, 1);
+                    renderFileList();
+                    updateTranscribeButton();
+                });
+            });
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) {
+                return bytes + ' B';
+            } else if (bytes < 1048576) {
+                return (bytes / 1024).toFixed(1) + ' KB';
+            } else {
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+        }
+        
+        function updateTranscribeButton() {
+            transcribeButton.disabled = files.length === 0 || isProcessing;
+        }
+        
+        async function startTranscription() {
+            if (files.length === 0) return;
+            
+            isProcessing = true;
+            updateTranscribeButton();
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressStatus.textContent = 'Preparing files...';
+            
+            // Clear existing results if reprocessing
+            if (!document.querySelector('.result-card')) {
+                resultsContainer.innerHTML = '';
+            }
+            
+            let completedFiles = 0;
+            let errorFiles = 0;
+            
+            // Process files in parallel (3 at a time)
+            const batchSize = 3;
+            const fileBatches = [];
+            
+            for (let i = 0; i < files.length; i += batchSize) {
+                fileBatches.push(files.slice(i, i + batchSize));
+            }
+            
+            for (const batch of fileBatches) {
+                const batchPromises = batch.map(file => processFile(file));
+                await Promise.all(batchPromises);
+            }
+            
+            isProcessing = false;
+            updateTranscribeButton();
+            progressStatus.textContent = `Completed: ${completedFiles} files processed, ${errorFiles} errors`;
+            
+            // Helper function to process a single file
+            async function processFile(file) {
+                try {
+                    // Update status
+                    fileStatuses.set(file.name, 'processing');
+                    renderFileList();
+                    
+                    // Create placeholder result card
+                    const resultId = 'result-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    createResultCard(resultId, file.name, 'Processing...');
+                    
+                    // Upload file
+                    progressStatus.textContent = `Uploading: ${file.name}`;
+                    const uploadUrl = await uploadFile(file);
+                    
+                    // Start transcription
+                    progressStatus.textContent = `Transcribing: ${file.name}`;
+                    
+                    // Prepare transcription parameters
+                    let transcriptionParams = {
+                        audio_url: uploadUrl,
+                        language_detection: true
+                    };
+                    
+                    const transcriptionId = await startTranscriptionJob(transcriptionParams);
+                    
+                    // Poll for results
+                    const transcript = await pollTranscriptionResult(transcriptionId);
+                    
+                    // Update result card
+                    updateResultCard(resultId, file.name, transcript);
+                    
+                    // Update status
+                    fileStatuses.set(file.name, 'completed');
+                    completedFiles++;
+                    
+                } catch (error) {
+                    console.error(`Error processing ${file.name}:`, error);
+                    
+                    // Update result card with error
+                    const errorCard = document.getElementById(resultId);
+                    if (errorCard) {
+                        errorCard.querySelector('.result-content').innerHTML = 
+                            `<span class="error-message">Error: ${error.message || 'Failed to transcribe file'}</span>`;
+                    } else {
+                        createResultCard(
+                            'error-' + Date.now(), 
+                            file.name, 
+                            `<span class="error-message">Error: ${error.message || 'Failed to transcribe file'}</span>`
+                        );
                     }
                     
-                    // Add speaker detection
-                    if (enableSpeakersCheckbox.checked) {
-                        transcriptionParams.speaker_labels = true;
-                    }
+                    // Update status
+                    fileStatuses.set(file.name, 'error');
+                    errorFiles++;
+                }
+                
+                // Update progress
+                const progress = ((completedFiles + errorFiles) / files.length) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressStatus.textContent = `Progress: ${completedFiles + errorFiles}/${files.length} files processed`;
+                renderFileList();
+            }
+        }
+        
+        function createResultCard(id, fileName, content) {
+            const resultCard = document.createElement('div');
+            resultCard.className = 'result-card';
+            resultCard.id = id;
+            
+            resultCard.innerHTML = `
+                <div class="result-header">
+                    <div class="result-title">${fileName}</div>
+                    <div class="result-actions">
+                        <button class="action-button copy-button">Copy</button>
+                        <button class="action-button download-button">Download</button>
+                        <button class="action-button chatgpt sendto-chatgpt-button">Send to ChatGPT</button>
+                        <button class="action-button translate translate-button">Translate</button>
+                        <button class="action-button summarize summarize-button">Summarize</button>
+                    </div>
+                </div>
+                <div class="result-content">${content}</div>
+            `;
+            
+            resultsContainer.insertBefore(resultCard, resultsContainer.firstChild);
+            
+            // Add event listeners
+            const copyButton = resultCard.querySelector('.copy-button');
+            const downloadButton = resultCard.querySelector('.download-button');
+            const sendToChatGPTButton = resultCard.querySelector('.sendto-chatgpt-button');
+            const translateButton = resultCard.querySelector('.translate-button');
+            const summarizeButton = resultCard.querySelector('.summarize-button');
+            
+            copyButton.addEventListener('click', () => {
+                const text = resultCard.querySelector('.result-content').textContent;
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        const originalText = copyButton.textContent;
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => console.error('Could not copy text: ', err));
+            });
+            
+            downloadButton.addEventListener('click', () => {
+                const text = resultCard.querySelector('.result-content').textContent;
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                
+                a.href = url;
+                a.download = fileName.replace(/\.[^/.]+$/, '') + '_transcript.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            sendToChatGPTButton.addEventListener('click', () => {
+                const text = resultCard.querySelector('.result-content').textContent;
+                chatgptText.value = text;
+                chatgptModal.style.display = 'flex';
+                currentTranscript = text;
+            });
+            
+            translateButton.addEventListener('click', () =>
+              <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription Tool</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 2.2rem;
+        }
+        .author {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: #777;
+        }
+        .author a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .author a:hover {
+            text-decoration: underline;
+        }
+        .upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        .upload-container:hover, .upload-container.active {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .upload-message {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .file-input {
+            display: none;
+        }
+        .select-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .select-button:hover {
+            background-color: var(--secondary);
+        }
+        .file-list {
+            margin-bottom: 1.5rem;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+        .file-icon {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-size {
+            color: #666;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        .remove-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .transcribe-button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .transcribe-button:hover {
+            background-color: var(--secondary);
+        }
+        .transcribe-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin: 1.5rem 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-status {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+        }
+        .results-container {
+            margin-top: 1.5rem;
+        }
+        .result-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .result-title {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .action-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .action-button:hover {
+            background-color: var(--secondary);
+        }
+        .action-button.chatgpt {
+            background-color: #10a37f;
+        }
+        .action-button.chatgpt:hover {
+            background-color: #0d8c6c;
+        }
+        .action-button.translate {
+            background-color: #4285f4;
+        }
+        .action-button.translate:hover {
+            background-color: #3367d6;
+        }
+        .action-button.summarize {
+            background-color: #fbbc05;
+            color: #333;
+        }
+        .action-button.summarize:hover {
+            background-color: #f9a825;
+        }
+        .result-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background-color: white;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        .error-message {
+            color: #f44336;
+            font-weight: 500;
+        }
+        .status-pill {
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+        .status-processing {
+            background-color: #ffe0b2;
+            color: #e65100;
+        }
+        .status-completed {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .status-error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-header {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .modal-body textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #777;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .result-actions {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Transcription Tool</h1>
+        <p class="author">Created by <a href="https://instagram.com/max.bsow" target="_blank">@max.bsow</a> | Powered by AssemblyAI</p>
+        
+        <div id="upload-container" class="upload-container">
+            <div class="upload-icon">🎙️</div>
+            <div class="upload-message">Drag & drop audio files here</div>
+            <div class="upload-message">or</div>
+            <button id="select-button" class="select-button">Select Files</button>
+            <input type="file" id="file-input" class="file-input" accept="audio/*" multiple>
+        </div>
+        
+        <div id="file-list" class="file-list"></div>
+        
+        <button id="transcribe-button" class="transcribe-button">Transcribe Files</button>
+        
+        <div id="progress-container" class="progress-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-status" class="progress-status">Initializing...</div>
+        </div>
+        
+        <div id="results-container" class="results-container"></div>
+        
+        <div class="footer">
+            Powered by AssemblyAI API • Made with ❤️ by @max.bsow
+        </div>
+    </div>
+    
+    <!-- ChatGPT Modal -->
+    <div id="chatgpt-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-chatgpt-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Send to ChatGPT</h3>
+                <p>Copy this text and paste it into ChatGPT</p>
+            </div>
+            <div class="modal-body">
+                <textarea id="chatgpt-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-to-clipboard">Copy to Clipboard</button>
+                <button class="action-button chatgpt" id="open-chatgpt">Open ChatGPT</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Translate Modal -->
+    <div id="translate-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-translate-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Translation</h3>
+                <p>Translate using Google Translate</p>
+            </div>
+            <div class="modal-body">
+                <div class="language-selector">
+                    <select id="translate-language">
+                        <option value="en">English</option>
+                        <option value="de">German</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="zh-CN">Chinese (Simplified)</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hi">Hindi</option>
+                    </select>
+                </div>
+                <textarea id="translate-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-translate">Copy</button>
+                <button class="action-button translate" id="open-translator">Open in Google Translate</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summarize Modal -->
+    <div id="summarize-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-summarize-modal">&times;</span>
+            <div class="modal-header">
+                <h3 class="modal-title">Text Summary</h3>
+                <p>Send to ChatGPT with a summarization prompt</p>
+            </div>
+            <div class="modal-body">
+                <textarea id="summarize-text" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="action-button" id="copy-summary">Copy</button>
+                <button class="action-button chatgpt" id="summarize-with-chatgpt">Open in ChatGPT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your API key is pre-configured
+        const API_KEY = 'b9b496027b404fe8ad26320eddd30eaa';
+        
+        // DOM Elements
+        const uploadContainer = document.getElementById('upload-container');
+        const fileInput = document.getElementById('file-input');
+        const selectButton = document.getElementById('select-button');
+        const fileList = document.getElementById('file-list');
+        const transcribeButton = document.getElementById('transcribe-button');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-fill');
+        const progressStatus = document.getElementById('progress-status');
+        const resultsContainer = document.getElementById('results-container');
+        
+        // Modals
+        const chatgptModal = document.getElementById('chatgpt-modal');
+        const closeChatgptModal = document.getElementById('close-chatgpt-modal');
+        const chatgptText = document.getElementById('chatgpt-text');
+        const copyToClipboardBtn = document.getElementById('copy-to-clipboard');
+        const openChatgptBtn = document.getElementById('open-chatgpt');
+        
+        const translateModal = document.getElementById('translate-modal');
+        const closeTranslateModal = document.getElementById('close-translate-modal');
+        const translateText = document.getElementById('translate-text');
+        const translateLanguage = document.getElementById('translate-language');
+        const copyTranslateBtn = document.getElementById('copy-translate');
+        const openTranslatorBtn = document.getElementById('open-translator');
+        
+        const summarizeModal = document.getElementById('summarize-modal');
+        const closeSummarizeModal = document.getElementById('close-summarize-modal');
+        const summarizeText = document.getElementById('summarize-text');
+        const copySummaryBtn = document.getElementById('copy-summary');
+        const summarizeWithChatgptBtn = document.getElementById('summarize-with-chatgpt');
+        
+        // State
+        let files = [];
+        let isProcessing = false;
+        const fileStatuses = new Map();
+        let currentTranscript = '';
+        
+        // Event Listeners
+        selectButton.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                addFiles(Array.from(e.target.files));
+                fileInput.value = ''; // Reset input
+            }
+        });
+        
+        uploadContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadContainer.classList.add('active');
+        });
+        
+        uploadContainer.addEventListener('dragleave', () => {
+            uploadContainer.classList.remove('active');
+        });
+        
+        uploadContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadContainer.classList.remove('active');
+            
+            const audioFiles = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('audio/') || 
+                ['mp3', 'wav', 'm4a', 'flac', 'aac', 'ogg', 'mp4'].some(ext => 
+                    file.name.toLowerCase().endsWith('.' + ext)
+                )
+            );
+            
+            if (audioFiles.length > 0) {
+                addFiles(audioFiles);
+            } else {
+                alert('Please drop audio files only.');
+            }
+        });
+        
+        transcribeButton.addEventListener('click', startTranscription);
+        
+        // Modal close buttons
+        closeChatgptModal.addEventListener('click', () => chatgptModal.style.display = 'none');
+        closeTranslateModal.addEventListener('click', () => translateModal.style.display = 'none');
+        closeSummarizeModal.addEventListener('click', () => summarizeModal.style.display = 'none');
+        
+        // Copy buttons
+        copyToClipboardBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(chatgptText.value)
+                .then(() => {
+                    copyToClipboardBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyToClipboardBtn.textContent = 'Copy to Clipboard';
+                    }, 2000);
+                });
+        });
+        
+        copyTranslateBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(translateText.value)
+                .then(() => {
+                    copyTranslateBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyTranslateBtn.textContent = 'Copy';
+                    }, 2000);
+                });
+        });
+        
+        copySummaryBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(summarizeText.value)
+                .then(() => {
+                    copySummaryBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copySummaryBtn.textContent = 'Copy';
+                    }, 2000);
+                });
+        });
+        
+        // Open buttons
+        openChatgptBtn.addEventListener('click', () => {
+            window.open('https://chat.openai.com/', '_blank');
+        });
+        
+        openTranslatorBtn.addEventListener('click', () => {
+            const text = encodeURIComponent(translateText.value);
+            const lang = translateLanguage.value;
+            window.open(`https://translate.google.com/?sl=auto&tl=${lang}&text=${text}`, '_blank');
+        });
+        
+        summarizeWithChatgptBtn.addEventListener('click', () => {
+            window.open('https://chat.openai.com/', '_blank');
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === chatgptModal) chatgptModal.style.display = 'none';
+            if (e.target === translateModal) translateModal.style.display = 'none';
+            if (e.target === summarizeModal) summarizeModal.style.display = 'none';
+        });
+        
+        // Functions
+        function addFiles(newFiles) {
+            // Add only files that aren't already in the list
+            const filesToAdd = newFiles.filter(newFile => 
+                !files.some(file => file.name === newFile.name && file.size === newFile.size)
+            );
+            
+            files = [...files, ...filesToAdd];
+            renderFileList();
+            updateTranscribeButton();
+        }
+        
+        function renderFileList() {
+            fileList.innerHTML = '';
+            
+            if (files.length === 0) {
+                return;
+            }
+            
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const status = fileStatuses.get(file.name) || 'pending';
+                let statusHtml = '';
+                
+                if (status === 'processing') {
+                    statusHtml = '<span class="status-pill status-processing">Processing</span>';
+                } else if (status === 'completed') {
+                    statusHtml = '<span class="status-pill status-completed">Completed</span>';
+                } else if (status === 'error') {
+                    statusHtml = '<span class="status-pill status-error">Error</span>';
+                }
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">🔊</span>
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                        ${statusHtml}
+                    </div>
+                    <button class="remove-button" data-index="${index}">Remove</button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (isProcessing) return;
+                    
+                    const index = parseInt(button.getAttribute('data-index'));
+                    files.splice(index, 1);
+                    renderFileList();
+                    updateTranscribeButton();
+                });
+            });
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) {
+                return bytes + ' B';
+            } else if (bytes < 1048576) {
+                return (bytes / 1024).toFixed(1) + ' KB';
+            } else {
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+        }
+        
+        function updateTranscribeButton() {
+            transcribeButton.disabled = files.length === 0 || isProcessing;
+        }
+        
+        async function startTranscription() {
+            if (files.length === 0) return;
+            
+            isProcessing = true;
+            updateTranscribeButton();
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressStatus.textContent = 'Preparing files...';
+            
+            // Clear existing results if reprocessing
+            if (!document.querySelector('.result-card')) {
+                resultsContainer.innerHTML = '';
+            }
+            
+            let completedFiles = 0;
+            let errorFiles = 0;
+            
+            // Process files one at a time to avoid API rate limits
+            for (let i = 0; i < files.length; i++) {
+                await processFile(files[i]);
+            }
+            
+            isProcessing = false;
+            updateTranscribeButton();
+            progressStatus.textContent = `Completed: ${completedFiles} files processed, ${errorFiles} errors`;
+            
+            // Helper function to process a single file
+            async function processFile(file) {
+                try {
+                    // Update status
+                    fileStatuses.set(file.name, 'processing');
+                    renderFileList();
+                    
+                    // Create placeholder result card
+                    const resultId = 'result-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    createResultCard(resultId, file.name, 'Processing...');
+                    
+                    // Upload file
+                    progressStatus.textContent = `Uploading: ${file.name}`;
+                    const uploadUrl = await uploadFile(file);
+                    
+                    // Start transcription
+                    progressStatus.textContent = `Transcribing: ${file.name}`;
+                    
+                    // Prepare transcription parameters
+                    let transcriptionParams = {
+                        audio_url: uploadUrl,
+                        language_detection: true
+                    };
                     
                     const transcriptionId = await startTranscriptionJob(transcriptionParams);
                     
@@ -118,6 +1646,7 @@ transcriptionParams.punctuate = true;
             
             summarizeButton.addEventListener('click', () => {
                 const text = resultCard.querySelector('.result-content').textContent;
+                summarizeText.value = `Please summarize
                 summarizeText.value = `Please summarize the following transcript concisely:\n\n${text}`;
                 summarizeModal.style.display = 'flex';
                 currentTranscript = text;
@@ -218,7 +1747,7 @@ transcriptionParams.punctuate = true;
             throw new Error('Transcription timed out');
         }
         
-        // Record browser capability for mobile Safari compatibility
+        // Record button for mobile devices
         const recordButton = document.createElement('button');
         recordButton.className = 'select-button';
         recordButton.style.marginLeft = '10px';
