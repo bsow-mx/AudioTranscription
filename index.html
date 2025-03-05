@@ -640,3 +640,51 @@
     </script>
 </body>
 </html>
+
+<!-- Instagram-Name modern im bestehenden blauen Stil anzeigen -->
+<div style="
+    margin: 3rem auto;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    max-width: 400px;
+    animation: fadeIn 1.5s ease-in-out;">
+    <div style="font-size: 2rem; font-weight: 600;">Instagram</div>
+    <div style="font-size: 1.2rem; opacity: 0.9; margin-top: 6px;">@max.bsow</div>
+</div>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- Bulk Copy Button -->
+<button id="bulk-copy-button" class="select-button" style="margin-top:20px;width:100%;">
+  📋 Alle Transkripte kopieren
+</button>
+
+<script>
+document.getElementById('bulk-copy-button').onclick = () => {
+  const transcripts = document.querySelectorAll('.result-content');
+  if (transcripts.length === 0) {
+    alert('Keine Transkripte zum Kopieren vorhanden.');
+    return;
+  }
+
+  let combinedText = '';
+  transcripts.forEach((transcript, index) => {
+    combinedText += `Transcript ${index + 1}:\n${transcript.textContent}\n\n`;
+  });
+
+  navigator.clipboard.writeText(combinedText).then(() => {
+    alert('✅ Alle Transkripte wurden erfolgreich kopiert!');
+  }).catch(err => {
+    alert('⚠️ Fehler beim Kopieren: ' + err);
+  });
+};
+</script>
